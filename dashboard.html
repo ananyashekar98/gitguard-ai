@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitGuard AI Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; }
+    
+    .header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header h1 { font-size: 20px; color: #58a6ff; }
+    .header span { font-size: 13px; color: #8b949e; }
+    .status-dot { width: 8px; height: 8px; background: #3fb950; border-radius: 50%; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-card .number { font-size: 32px; font-weight: bold; color: #58a6ff; }
+    .stat-card .label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #e6edf3;
+    }
+
+    .review-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .review-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      border-bottom: 1px solid #30363d;
+    }
+    .review-header:hover { background: #1c2128; }
+    .pr-info { display: flex; flex-direction: column; gap: 4px; }
+    .pr-title { font-weight: 600; color: #e6edf3; }
+    .pr-meta { font-size: 12px; color: #8b949e; }
+    .pr-badge {
+      background: #238636;
+      color: white;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .review-body {
+      padding: 16px;
+      display: none;
+      border-top: 1px solid #30363d;
+    }
+    .review-body.open { display: block; }
+    .review-body pre {
+      background: #0d1117;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8b949e;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+    .settings-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #30363d;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; }
+    .toggle-desc { font-size: 12px; color: #8b949e; margin-top: 2px; }
+    .toggle {
+      width: 40px; height: 22px;
+      background: #238636;
+      border-radius: 11px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .toggle.off { background: #30363d; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: left 0.2s;
+    }
+    .toggle.off::after { left: 3px; }
+    .toggle.on::after { left: 21px; }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #30363d;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #8b949e;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="status-dot"></div>
+  <h1>🛡️ GitGuard AI</h1>
+  <span>Automated PR Review Dashboard</span>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="number" id="totalReviews">0</div>
+      <div class="label">Total Reviews</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="bugsFound">0</div>
+      <div class="label">Bugs Caught</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="reposMonitored">0</div>
+      <div class="label">Repos Monitored</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="avgTime">4.2s</div>
+      <div class="label">Avg Response Time</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('reviews')">📋 Review History</div>
+    <div class="tab" onclick="showTab('settings')">⚙️ Settings</div>
+  </div>
+
+  <!-- Reviews Tab -->
+  <div id="tab-reviews">
+    <div class="section-title">Recent PR Reviews</div>
+    <div id="reviewsList">
+      <div class="empty-state">
+        <div class="icon">🤖</div>
+        <p>No reviews yet. Open a Pull Request to trigger GitGuard AI!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" style="display:none">
+    <div class="section-title">Review Settings</div>
+    <div class="settings-card">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Strict Mode</div>
+          <div class="toggle-desc">Flag minor issues and style problems</div>
+        </div>
+        <div class="toggle on" onclick="toggleSetting(this)"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Ignore Linter Issues</div>
+          <div class="toggle-desc">Skip formatting and linting feedback</div>
+        </div>
+        <div class="toggle off" onclick="toggleSetting(this)"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Auto-Request Changes</div>
+          <div class="toggle-desc">Automatically request changes when bugs found</div>
+        </div>
+        <div class="toggle off" onclick="toggleSetting(this)"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Security Scan</div>
+          <div class="toggle-desc">Always check for security vulnerabilities</div>
+        </div>
+        <div class="toggle on" onclick="toggleSetting(this)"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Sample review data (in real app this comes from your server)
+  const reviews = [
+    {
+      id: 1,
+      title: "Create calculator.js",
+      repo: "ananyashekar98/gitguard-test",
+      prNumber: 2,
+      action: "synchronize",
+      time: new Date().toLocaleString(),
+      bugs: 2,
+      responseTime: '4.23s',
+      review: `## 📋 Summary
+This PR introduces calculator.js with divide and getUser functions. Both functions lack input validation.
+
+## 🐛 Bugs Found
+1. Division by zero in the divide function
+2. Null pointer exception in the getUser function
+
+## 🔒 Security Issues
+No security issues found.
+
+## 💡 Code Quality Suggestions
+1. Add input validation to handle division by zero
+2. Add null checks to prevent null pointer exceptions
+3. Consider adding try-catch blocks for error handling
+
+## ✅ Fixed Code
+function divide(a, b) {
+  if (b === 0) throw new Error("Cannot divide by zero");
+  return a / b;
+}
+
+function getUser(user) {
+  if (!user) return null;
+  return user.name;
+}`
+    }
+  ];
+
+  // Render reviews
+  function renderReviews() {
+    const list = document.getElementById('reviewsList');
+    if (reviews.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">🤖</div><p>No reviews yet!</p></div>';
+      return;
+    }
+
+    list.innerHTML = reviews.map((r, i) => `
+      <div class="review-card">
+        <div class="review-header" onclick="toggleReview(${i})">
+          <div class="pr-info">
+            <div class="pr-title">PR #${r.prNumber}: ${r.title}</div>
+            <div class="pr-meta">📁 ${r.repo} · 🕐 ${r.time} · 🐛 ${r.bugs} bugs found · ⏱️ ${r.responseTime}</div>
+          </div>
+          <span class="pr-badge">✅ Reviewed</span>
+        </div>
+        <div class="review-body" id="review-${i}">
+          <pre>${r.review}</pre>
+        </div>
+      </div>
+    `).join('');
+
+    // Update stats
+    document.getElementById('totalReviews').textContent = reviews.length;
+    document.getElementById('bugsFound').textContent = reviews.reduce((a, r) => a + r.bugs, 0);
+    document.getElementById('reposMonitored').textContent = new Set(reviews.map(r => r.repo)).size;
+  }
+
+  function toggleReview(i) {
+    const body = document.getElementById(`review-${i}`);
+    body.classList.toggle('open');
+  }
+
+  function showTab(tab) {
+    document.getElementById('tab-reviews').style.display = tab === 'reviews' ? 'block' : 'none';
+    document.getElementById('tab-settings').style.display = tab === 'settings' ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (tab === 'reviews' && i === 0) || (tab === 'settings' && i === 1));
+    });
+  }
+
+  function toggleSetting(el) {
+    el.classList.toggle('on');
+    el.classList.toggle('off');
+  }
+
+  renderReviews();
+</script>
+
+</body>
+</html>
