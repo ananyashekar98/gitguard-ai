@@ -7,12 +7,16 @@ const Groq = require('groq-sdk');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const path = require('path');
+const cors = require('cors');
+app.use(cors());
 
 // Initialize Groq AI
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Initialize GitHub client
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+// In-memory store for reviews
+const reviewHistory = [];
 
 app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf; }
@@ -79,7 +83,15 @@ ${diff}
 
   return completion.choices[0].message.content;
 }
-
+// Count bugs from AI review response
+function countBugs(reviewText) {
+  const bugsSection = reviewText.match(/## 🐛 Bugs Found([\s\S]*?)## /);
+  if (!bugsSection) return 0;
+  const content = bugsSection[1];
+  if (content.toLowerCase().includes('no bugs found')) return 0;
+  const matches = content.match(/^\d+\./gm);
+  return matches ? matches.length : 0;
+}
 // Post review comment back to GitHub PR
 async function postReviewComment(owner, repo, pull_number, review) {
   console.log('Posting review comment to GitHub...');
@@ -118,6 +130,14 @@ app.post('/webhook', async (req, res) => {
     console.log('PR Title:', pull_request.title);
     console.log('Repo:', repository.full_name);
     console.log('PR Number:', pull_request.number);
+    // Save to history so dashboard can read it
+    reviewHistory.push({
+      prNumber: pull_request.number,
+      title: pull_request.title,
+      repo: repository.full_name,
+      time: new Date().toLocaleString(),
+      action: action
+    });
 
     res.status(200).send('OK');
 
@@ -127,12 +147,31 @@ app.post('/webhook', async (req, res) => {
       const diff = await getPRDiff(owner, repo, pull_request.number);
       
       const review = await analyzeWithGemini(diff);
-      console.log('\n📝 AI Review Generated:\n', review);
+const bugCount = countBugs(review);
+console.log('✅ AI review generated!');
+console.log(`🐛 Bugs found: ${bugCount}`);s
       
       await postReviewComment(owner, repo, pull_request.number, review);
 
       const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-      console.log(`⏱️ Total time: ${totalTime} seconds`);
+console.log(`⏱️ Total time: ${totalTime} seconds`);
+console.log(`📊 REVIEW_DATA: ${JSON.stringify({
+  prNumber: pull_request.number,
+  title: pull_request.title,
+  repo: repository.full_name,
+  bugs: bugCount,
+  responseTime: totalTime + 's',
+  time: new Date().toLocaleString()
+})}`);
+      // Update the history entry with AI results
+const entry = reviewHistory.find(r => r.prNumber === pull_request.number);
+if (entry) {
+  entry.responseTime = totalTime + 's';
+  entry.review = review;
+  entry.bugs = (review.match(/##\s*🐛/g) ? 
+    (review.split('##')[review.split('##').findIndex(s => s.includes('🐛')) + 1] || '')
+    .split('\n').filter(l => l.match(/^\d+\./)).length : 0);
+}
       
     } catch (error) {
       console.error('❌ Error:', error.message);
@@ -143,6 +182,11 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+
+
+app.get('/reviews', (req, res) => {
+  res.json(reviewHistory);
+});
 app.listen(PORT, () => {
   console.log(`🚀 GitGuard AI listening on port ${PORT}`);
 });
