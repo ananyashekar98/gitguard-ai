@@ -190,3 +190,6 @@ app.get('/reviews', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 GitGuard AI listening on port ${PORT}`);
 });
+
+// Entry point of the application
+// Extract PR details from payload
