@@ -149,7 +149,8 @@ app.post('/webhook', async (req, res) => {
       const review = await analyzeWithGemini(diff);
 const bugCount = countBugs(review);
 console.log('✅ AI review generated!');
-console.log(`🐛 Bugs found: ${bugCount}`);s
+console.log('📤 Sending review to GitHub...');
+console.log(`🐛 Bugs found: ${bugCount}`);
       
       await postReviewComment(owner, repo, pull_request.number, review);
 
