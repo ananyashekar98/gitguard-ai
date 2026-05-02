@@ -4,20 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Raksha-1225/gitguard-ai.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Raksha-1225/gitguard-ai/issues"
+  },
+  "homepage": "https://github.com/Raksha-1225/gitguard-ai#readme",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@octokit/rest": "^22.0.1",
-    "axios": "^1.15.0",
+    "better-sqlite3": "^12.9.0",
     "cors": "^2.8.6",
-    "crypto": "^1.0.1",
-    "dotenv": "^17.4.1",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "fs": "^0.0.1-security",
     "groq-sdk": "^1.1.2"
   }
 }
