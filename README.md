@@ -1,6 +1,7 @@
+
 Product Name: GitGuard AI 
 
-Project Title: Automated Pull Request Sentinel                                                                                                                                                                                                                                                                
+Project Title: Automated Pull Request  Sentinel                                                                                                                                                                                                                                                                
 SUMMARY:                                                                                                                                  
 GitGuard AI is an internal "AI-First" tool designed to automate the code review process. It functions as a "Sentinel" that listens for repository activity and provides immediate, actionable intelligence on code quality, security, and performance directly within the developer's workflow.  
 GitGuard AI, is an internal tool designed to function as an Automated Pull Request Sentinel. Its primary purpose is to listen for GitHub Webhooks and automatically review code changes for bugs, security vulnerabilities, or performance issues.                                      
@@ -130,4 +131,25 @@ phase5:Week 4: Dashboard & Customization
 
 
 
+
+=======
+# GitGuard AI
+
+## Overview
+GitGuard AI is an automated pull request review system that analyzes code changes using AI.
+
+## Features
+- Automated PR review
+- Detects bugs and issues
+- Suggests improvements
+- AI-based code analysis
+
+## Tech Stack
+- Node.js
+- GitHub Webhooks
+- Gemini AI
+
+## Contribution
+- Improved project documentation
+- Added clarity for better understanding
 

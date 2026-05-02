@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitGuard AI Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #0d1117, #010409);
+  color: #c9d1d9;
+   }
+
+    .header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header h1 { font-size: 20px; color: #58a6ff; }
+    .header span { font-size: 13px; color: #8b949e; }
+    .status-dot { width: 8px; height: 8px; background: #3fb950; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .live-badge { background: #3fb95022; border: 1px solid #3fb950; color: #3fb950; font-size: 11px; padding: 3px 10px; border-radius: 20px; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: #58a6ff; }
+    .stat-card .number { font-size: 32px; font-weight: bold; color: #58a6ff; }
+    .stat-card .label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+    .stat-card .change { font-size: 11px; color: #3fb950; margin-top: 4px; }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #30363d;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #8b949e;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s;
+    }
+    .tab:hover { color: #e6edf3; }
+    .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+
+    .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #e6edf3; }
+
+    .review-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .review-card:hover { border-color: #58a6ff44; }
+    .review-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .review-header:hover { background: #1c2128; }
+    .pr-info { display: flex; flex-direction: column; gap: 4px; }
+    .pr-title { font-weight: 600; color: #e6edf3; }
+    .pr-meta { font-size: 12px; color: #8b949e; }
+    .pr-badges { display: flex; gap: 8px; align-items: center; }
+    .badge-reviewed { background: #238636; color: white; font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    .badge-bugs { background: #da363322; color: #f85149; border: 1px solid #f8514933; font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    .chevron { color: #8b949e; font-size: 12px; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+
+    .review-body {
+      padding: 0 16px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s;
+      border-top: 0px solid #30363d;
+    }
+    .review-body.open {
+      max-height: 600px;
+      padding: 16px;
+      border-top: 1px solid #30363d;
+    }
+    .review-body pre {
+      background: #0d1117;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+      white-space: pre-wrap;
+      line-height: 1.7;
+      border: 1px solid #30363d;
+    }
+
+    /* Settings */
+    .settings-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #30363d;
+      transition: background 0.2s;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-row:hover { background: #1c2128; }
+    .toggle-info { flex: 1; }
+    .toggle-label { font-size: 14px; color: #e6edf3; font-weight: 500; }
+    .toggle-desc { font-size: 12px; color: #8b949e; margin-top: 3px; }
+    .toggle-status { font-size: 11px; margin-top: 4px; }
+    .toggle-status.on { color: #3fb950; }
+    .toggle-status.off { color: #8b949e; }
+
+    .toggle-switch {
+      width: 44px; height: 24px;
+      background: #30363d;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.3s;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+    .toggle-switch.on { background: #238636; }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: left 0.3s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toggle-switch.on::after { left: 23px; }
+
+    .save-btn {
+      background: #238636;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .save-btn:hover { background: #2ea043; }
+    .save-btn:active { background: #1a7f37; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #238636;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #8b949e; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+
+    .activity-log {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+    }
+    .log-title { font-size: 14px; font-weight: 600; color: #e6edf3; margin-bottom: 12px; }
+    .log-item {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 13px;
+      align-items: center;
+    }
+    .log-item:last-child { border-bottom: none; }
+    .log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .log-dot.green { background: #3fb950; }
+    .log-dot.blue { background: #58a6ff; }
+    .log-dot.yellow { background: #d29922; }
+    .log-time { color: #8b949e; font-size: 11px; min-width: 80px; }
+    .log-text { color: #c9d1d9; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="status-dot"></div>
+    <h1>🛡️ GitGuard AI</h1>
+    <span>Automated PR Review Dashboard</span>
+  </div>
+  <div class="live-badge">● LIVE</div>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="number" id="totalReviews">3</div>
+      <div class="label">Total Reviews</div>
+      <div class="change">↑ All time</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="bugsFound">5</div>
+      <div class="label">Bugs Caught</div>
+      <div class="change">↑ Saved from production</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="reposMonitored">1</div>
+      <div class="label">Repos Monitored</div>
+      <div class="change">↑ Active</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="avgTime">4.2s</div>
+      <div class="label">Avg Response Time</div>
+      <div class="change">↑ Fast</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('reviews', this)">📋 Review History</div>
+    <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
+    <div class="tab" onclick="showTab('activity', this)">📡 Activity Log</div>
+  </div>
+
+  <!-- Reviews Tab -->
+  <div id="tab-reviews">
+    <div class="section-title">Recent PR Reviews</div>
+    <div id="reviewsList"></div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" style="display:none">
+    <div class="section-title">Review Settings</div>
+    <div class="settings-card">
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">🔍 Strict Mode</div>
+          <div class="toggle-desc">Flag minor issues, style problems and code smells</div>
+          <div class="toggle-status on" id="status-strict">● Enabled</div>
+        </div>
+        <div class="toggle-switch on" id="toggle-strict" onclick="toggleSetting('strict')"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">🎨 Ignore Linter Issues</div>
+          <div class="toggle-desc">Skip formatting and linting feedback from reviews</div>
+          <div class="toggle-status off" id="status-linter">● Disabled</div>
+        </div>
+        <div class="toggle-switch" id="toggle-linter" onclick="toggleSetting('linter')"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">🔄 Auto-Request Changes</div>
+          <div class="toggle-desc">Automatically request changes on PR when bugs are found</div>
+          <div class="toggle-status off" id="status-auto">● Disabled</div>
+        </div>
+        <div class="toggle-switch" id="toggle-auto" onclick="toggleSetting('auto')"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">🔒 Security Scan</div>
+          <div class="toggle-desc">Always check for security vulnerabilities in every PR</div>
+          <div class="toggle-status on" id="status-security">● Enabled</div>
+        </div>
+        <div class="toggle-switch on" id="toggle-security" onclick="toggleSetting('security')"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-label">⚡ Performance Check</div>
+          <div class="toggle-desc">Flag performance issues and suggest optimizations</div>
+          <div class="toggle-status off" id="status-perf">● Disabled</div>
+        </div>
+        <div class="toggle-switch" id="toggle-perf" onclick="toggleSetting('perf')"></div>
+      </div>
+
+    </div>
+    <button class="save-btn" onclick="saveSettings()">💾 Save Settings</button>
+  </div>
+
+  <!-- Activity Log Tab -->
+  <div id="tab-activity" style="display:none">
+    <div class="section-title">Live Activity Log</div>
+    <div class="activity-log">
+      <div id="activityList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // Review data
+  const reviews = [
+    {
+      id: 3,
+      title: "Add salary calculation and user email functions",
+      repo: "ananyashekar98/gitguard-test",
+      prNumber: 3,
+      time: "21/4/2026, 6:00:00 pm",
+      bugs: 2,
+      responseTime: "4.90s",
+      review: `## 📋 Summary
+This PR adds two functions: calculateSalary and getUserEmail. Both functions lack input validation which could cause runtime errors in production.
+
+## 🐛 Bugs Found
+1. Division used instead of multiplication in calculateSalary — wrong math logic
+2. No null check on user object in getUserEmail — will crash if user is null
+
+## 🔒 Security Issues
+No security issues found.
+
+## 💡 Code Quality Suggestions
+1. Add input validation for all function parameters
+2. Use try-catch blocks for error handling
+3. Add JSDoc comments for documentation
+
+## ✅ Fixed Code
+\`\`\`javascript
+function calculateSalary(hours, rate) {
+  if (!hours || !rate) throw new Error("Invalid input");
+  return hours * rate; // Fixed: multiply not divide
+}
+
+function getUserEmail(user) {
+  if (!user || !user.email) return null; // Fixed: null check
+  return user.email.toLowerCase();
+}
+\`\`\``
+    },
+    {
+      id: 2,
+      title: "Create calculator.js",
+      repo: "ananyashekar98/gitguard-test",
+      prNumber: 2,
+      time: "9/4/2026, 11:02:22 pm",
+      bugs: 2,
+      responseTime: "4.23s",
+      review: `## 📋 Summary
+This PR introduces calculator.js with divide and getUser functions. Both functions lack proper input validation.
+
+## 🐛 Bugs Found
+1. Division by zero — divide function has no zero check
+2. Null pointer exception — getUser has no null check on user object
+
+## 🔒 Security Issues
+No security issues found.
+
+## 💡 Code Quality Suggestions
+1. Add division by zero check
+2. Add null checks before property access
+3. Add error handling with try-catch
+
+## ✅ Fixed Code
+\`\`\`javascript
+function divide(a, b) {
+  if (b === 0) throw new Error("Cannot divide by zero");
+  return a / b;
+}
+
+function getUser(user) {
+  if (!user) return null;
+  return user.name;
+}
+\`\`\``
+    },
+    {
+      id: 1,
+      title: "Update test.txt",
+      repo: "ananyashekar98/gitguard-test",
+      prNumber: 1,
+      time: "9/4/2026, 5:39:00 pm",
+      bugs: 1,
+      responseTime: "3.10s",
+      review: `## 📋 Summary
+This PR updates test.txt — a plain text file with no functional code changes.
+
+## 🐛 Bugs Found
+No bugs found in this text file change.
+
+## 🔒 Security Issues
+No security issues found.
+
+## 💡 Code Quality Suggestions
+Consider using proper file extensions for code files.
+
+## ✅ Fixed Code
+No fixes needed.`
+    }
+  ];
+
+  // Settings state
+  const settings = {
+    strict: true,
+    linter: false,
+    auto: false,
+    security: true,
+    perf: false
+  };
+
+  // Activity log
+  const activities = [
+    { dot: 'green', time: '18:00:04', text: '✅ Review posted on PR #3 — 2 bugs found in 4.90s' },
+    { dot: 'blue',  time: '17:59:59', text: '🤖 Groq AI analyzed diff for PR #3' },
+    { dot: 'blue',  time: '17:59:57', text: '📥 Diff fetched from GitHub for PR #3' },
+    { dot: 'yellow',time: '17:59:55', text: '🔔 PR #3 webhook received — action: synchronize' },
+    { dot: 'green', time: '23:02:31', text: '✅ Review posted on PR #2 — 2 bugs found in 4.23s' },
+    { dot: 'blue',  time: '23:02:28', text: '🤖 Groq AI analyzed diff for PR #2' },
+    { dot: 'yellow',time: '23:02:25', text: '🔔 PR #2 webhook received — action: synchronize' },
+    { dot: 'green', time: '17:39:10', text: '✅ Review posted on PR #1 — 1 bug found in 3.10s' },
+    { dot: 'yellow',time: '17:39:05', text: '🔔 PR #1 webhook received — action: opened' },
+  ];
+
+  function renderReviews() {
+    const list = document.getElementById('reviewsList');
+    list.innerHTML = reviews.map((r, i) => `
+      <div class="review-card">
+        <div class="review-header" onclick="toggleReview(${i})">
+          <div class="pr-info">
+            <div class="pr-title">PR #${r.prNumber}: ${r.title}</div>
+            <div class="pr-meta">📁 ${r.repo} &nbsp;·&nbsp; 🕐 ${r.time} &nbsp;·&nbsp; ⏱️ ${r.responseTime}</div>
+          </div>
+          <div class="pr-badges">
+            <span class="badge-bugs">🐛 ${r.bugs} bugs</span>
+            <span class="badge-reviewed">✅ Reviewed</span>
+            <span class="chevron" id="chevron-${i}">▼</span>
+          </div>
+        </div>
+        <div class="review-body" id="review-${i}">
+          <pre>${r.review}</pre>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleReview(i) {
+    const body = document.getElementById(`review-${i}`);
+    const chevron = document.getElementById(`chevron-${i}`);
+    body.classList.toggle('open');
+    chevron.classList.toggle('open');
+  }
+
+  function showTab(tab, el) {
+    ['reviews', 'settings', 'activity'].forEach(t => {
+      document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function toggleSetting(key) {
+    settings[key] = !settings[key];
+    const sw = document.getElementById(`toggle-${key}`);
+    const st = document.getElementById(`status-${key}`);
+    sw.classList.toggle('on', settings[key]);
+    st.textContent = settings[key] ? '● Enabled' : '● Disabled';
+    st.className = `toggle-status ${settings[key] ? 'on' : 'off'}`;
+  }
+
+  function saveSettings() {
+    showToast('✅ Settings saved successfully!');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  function renderActivity() {
+    document.getElementById('activityList').innerHTML = activities.map(a => `
+      <div class="log-item">
+        <div class="log-dot ${a.dot}"></div>
+        <div class="log-time">${a.time}</div>
+        <div class="log-text">${a.text}</div>
+      </div>
+    `).join('');
+  }
+
+  renderReviews();
+  renderActivity();
+  // Fetch live data from backend
+async function fetchLiveData() {
+  try {
+    const res = await fetch('http://localhost:3000/reviews');
+    const liveData = await res.json();
+
+    if (liveData.length > 0) {
+      document.getElementById('totalReviews').textContent = 
+        reviews.length + liveData.length;
+
+      liveData.reverse().forEach(r => {
+        if (!reviews.find(x => x.prNumber === r.prNumber && x.repo === r.repo)) {
+          reviews.unshift({
+            id: r.prNumber,
+            prNumber: r.prNumber,
+            title: r.title,
+            repo: r.repo,
+            time: r.time,
+            bugs: r.bugs || 0,
+            responseTime: r.responseTime || 'pending...',
+            review: r.review || '⏳ AI review in progress...'
+          });
+        }
+      });
+      renderReviews();
+    }
+  } catch(e) {
+    console.log('⚠️ Backend not reachable, showing cached data');
+  }
+}
+
+fetchLiveData();
+setInterval(fetchLiveData, 5000); // refresh every 5 seconds
+</script>
+</body>
+</html>
