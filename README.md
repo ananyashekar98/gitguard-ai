@@ -35,3 +35,16 @@ GitGuard AI automatically reviews Pull Requests on GitHub using AI. When a devel
 - GITHUB_TOKEN
 - GROQ_API_KEY
 - PORT
+
+How It Works
+1. GitHub PR triggers webhook
+2. Webhook receives event
+3. Diff is fetched from GitHub
+4. AI analyzes code
+5. Review is:
+   - Posted to PR
+   - Saved in `reviews.log`
+
+Review Logging Feature (Week 4)
+
+This project includes a review logging feature that stores AI-generated code review results in a file.
