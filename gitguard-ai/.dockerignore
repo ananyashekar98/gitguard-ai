@@ -1,0 +1,22 @@
+# Dependency directories
+node_modules/
+npm-debug.log
+
+# Environment secrets (Crucial for security)
+.env
+.env.local
+.env.*
+
+#Git metadata
+.git
+.gitignore
+
+# Docker specific
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# IDE and System files
+.vscode/
+.idea/
+.DS_Store
